@@ -3,18 +3,16 @@ const fs = require('fs')
 const path = require('path')
 const cheerio = require('cheerio')
 
-const common = require('../services/common/common.service')
-const provinces = JSON.parse(fs.readFileSync('./province.json', 'utf-8'))
-const BasePath = __dirname + '/score_lines'
+const common = require('../services/common/common')
+const provinces = JSON.parse(fs.readFileSync('./json/province.json', 'utf-8'))
+const sleep = require('../utils/sleep')
+
+const BasePath = './data/scoreLines/'
 
 /**
  * axios 配置
  */
 axios.defaults.baseURL = 'https://ia-pv4y.youzy.cn'
-axios.defaults.headers.common['Accept'] = '*/*'
-axios.defaults.headers.common['User-Agent'] = 'PostmanRuntime/7.21.0'
-axios.defaults.headers.common['Cache-Control'] = 'no-cache'
-axios.defaults.headers.common['Connection'] = 'close'
 
 /**
  * 爬取各个省份的分数线 html 页面
@@ -24,7 +22,7 @@ async function crawlHtml() {
     let provinceName, encryptCode
     for (id in provinces) {
         provinceName = provinces[id]
-        p = common.youzyEpt({provinceId: id, provinceName: provinceName, isGaokaoVersion: false})
+        p = common.youzyEpt({ provinceId: id, provinceName: provinceName, isGaokaoVersion: false })
         tcode = common.youzyEpt({ provinceId: parseInt(id) })
         await axios.get('/scorelines/pcl', {
             params: {
@@ -33,11 +31,11 @@ async function crawlHtml() {
                 toUrl: '/scorelines/pcl'
             }
         }).then(res => {
-            res && fs.writeFileSync(`${BasePath}/${provinceName}.html`, JSON.stringify(res.data))
+            res && fs.writeFileSync(`${BasePath}/html/${provinceName}.html`, res.data)
         })
 
         console.log('crawl ==>', provinceName)
-
+        await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
     }
 }
 
@@ -73,29 +71,34 @@ function parseHtml(htmlName, result) {
                 })
             }
             result.push(pcls)
+            
         })
-        
+
     } catch (err) {
         console.log(err)
     }
 }
 
-function parseHtmlDir(){
-    const dir = path.normalize(__dirname + '/score_lines')
-    if(!fs.existsSync(dir)){
+function parseHtmlDir() {
+    const dir = path.normalize(BasePath + '/html/')
+
+    if (!fs.existsSync(dir)) {
         console.log("directory not exists", dir)
         return
     }
     fs.readdir(dir, (err, files) => {
         const result = []
-        files.forEach(file => {
-            if(path.extname(file) === '.html'){
-                parseHtml(path.normalize(`${dir}/${file}`), result)
-            }
-        })
-        fs.writeFile(path.normalize(`${dir}/score-lines.json`), JSON.stringify(result), err => console.log(err))
+        let file
+        for(let i = 0; i < files.length; i++) {
+            file = files[i]
+            parseHtml(path.normalize(`${dir}/${file}`), result)
+        }
+
+        fs.writeFileSync(path.normalize(`${BasePath}/json/score-lines.json`), JSON.stringify(result))
     })
 }
 
-// parseHtmlDir()
-crawlHtml() 
+// 1. 先爬
+// crawlHtml()
+// 2. 再提
+parseHtmlDir()
