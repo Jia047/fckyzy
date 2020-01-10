@@ -52,7 +52,7 @@ function parseCN(encryptCN) {
  */
 function parseNUM(encryptNUM) {
     let result = ''
-    if(encryptNUM === '' || encryptNUM.match('-') || encryptNUM === 0){
+    if(encryptNUM === '' || encryptNUM === 0 || encryptNUM.match('-')){
         return result
     }
 

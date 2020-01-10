@@ -2,12 +2,9 @@ const axios = require('axios')
 const path = require('path')
 const fs = require('fs')
 
-const common = require('../services/common/common.service')
+const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
-
-function sleep(ms) {
-    return new Promise(resolved => setTimeout(resolved, ms))
-}
+const sleep = require('../utils/sleep')
 
 /**
  * professionsData 专业信息密文 
@@ -97,7 +94,7 @@ async function query() {
                 console.log(provinceName, '==>', cName, `剩 ${colleges.length - i - 1} 个`);
             }
 
-            await sleep(Math.floor(Math.random() * 10) * 100)
+            await sleep.millisecond(Math.floor(Math.random() * 10) * 100)
         }
         console.log(provinceName, 'completely');
 

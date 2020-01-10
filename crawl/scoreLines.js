@@ -4,8 +4,9 @@ const path = require('path')
 const cheerio = require('cheerio')
 
 const common = require('../services/common/common')
-const provinces = JSON.parse(fs.readFileSync('./json/province.json', 'utf-8'))
 const sleep = require('../utils/sleep')
+
+const provinces = JSON.parse(fs.readFileSync('./json/province.json', 'utf-8'))
 
 const BasePath = './data/scoreLines/'
 

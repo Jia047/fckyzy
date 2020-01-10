@@ -6,67 +6,55 @@ const cheerio = require('cheerio')
 const fs = require('fs')
 const path = require('path')
 
-const common = require('../services/common/common.service')
+const common = require('../services/common/common')
+const ParseUtil = require('../utils/parse-util')
+const sleep = require('../utils/sleep')
 
-
-// const HOST = 'https://www.youzy.cn/'
-// const COLLEGE_LIST = 'tzy/search/colleges/collegeList'
-
-// axios.defaults.baseURL = HOST
+const BasePath = './data/collegeScoreLines'
 
 /**
  * 获取所有大学的id,
- * 无法处理 302 响应码，现在还没想到解决办法
  */
-/*async function crawlHtml() {
-    await axios.get(COLLEGE_LIST, {
-        params: {
-            // page: 1
+async function collegeList() {
+    // 总页数，默认是 145, 从 1 开始计数
+    let totalPages = 146
+    const params = { page: 1 }
+    const options = {
+        url: 'https://www.youzy.cn/tzy/search/colleges/collegeList',
+        method: 'GET',
+        params: params,
+        headers: {
+            // 需要设置省份的 cookie，不然会发生重定向到另一个网页进行省份设置，不信你把cookie注释掉，自己试试
+            'Cookie': 'Youzy2CCurrentProvince=%7B%22provinceId%22%3A848%2C%22provinceName%22%3A%22%E6%B2%B3%E5%8D%97%22%2C%22isGaokaoVersion%22%3Afalse%7D;'
         }
-    }).then(res => {
-        console.log(res.data)
-        console.log('cccc');
-
-    }).catch(err => {
-        console.log(err);
+    }
+    // 获取当前时间的总页数
+    await axios(options).then(res => {
+        const $ = cheerio.load(res.data)
+        const tp = $('ul.pagination').find('strong').eq(0).text()
+        // 得是数值才行
+        if (!isNaN(tp)) {
+            totalPages = tp + 1
+        }
+        console.log('total page', totalPages);
 
     })
-} */
 
-function sleep(ms){
-  return new Promise((resolve)=>setTimeout(resolve,ms));
-}
+    for (let i = 1; i < totalPages; i++) {
+        params.page = i
 
-/**
- * 获取大学的 ucode，因为每个省份的批次线要求不一样，所以有一个 provinceId 参数
- */
-async function ucode(provinceId, collegeId) {
-    return await axios({
-        url: 'https://ia-pv4y.youzy.cn/Data/ScoreLines/UCodes/QueryList?p=abc',
-        method: 'POST',
-        data: {
-            data: common.youzyEpt({
-                provinceId: provinceId,
-                collegeId: collegeId
-            })
-        }
-    }).then(res => {
-        let ucode = 0
-        const data = res.data.result
-        if (data.length !== 0) {
-            ucode = data[0].uCodeNum
-            data.forEach(function (r) {
-                var uCodeNumArr = r.uCodeNum.split('_').reverse()
-                if (uCodeNumArr[0] == '0' && uCodeNumArr[1] == '0') {
-                    uCode = r.uCodeNum
-                }
-            })
-        }
-        return ucode
-    }).catch(err => {
-        console.log(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
+        await axios(options).then(res => {
+            fs.writeFileSync(path.normalize(`${BasePath}/html/c_page_${i}.html`), res.data)
+            console.log(`crawl page_${i}`);
 
-    })
+        }).catch(err => {
+            console.log(err.errno);
+        })
+
+        await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
+    }
+    console.log(`crawl page completely, total page ${totalPages}`);
+
 }
 
 /**
@@ -93,89 +81,115 @@ function parseHtml(htmlFile, result) {
 }
 
 function parseHtmlDir() {
-    const dir = path.normalize(`${__dirname}/colleges/`)
+    const dir = path.normalize(`${BasePath}/html/`)
     if (fs.existsSync(dir)) {
         fs.readdir(dir, (err, files) => {
             const result = []
             files.forEach(file => {
-                if (path.extname(file) === '.html') {
-                    parseHtml(dir + file, result)
-                }
+                parseHtml(dir + file, result)
             })
-            fs.writeFileSync(dir + 'colleges.json', JSON.stringify(result))
+            fs.writeFileSync(`${BasePath}/json/colleges.json`, JSON.stringify(result))
         })
     }
 }
 
+/**
+ * 获取大学的 ucode，因为每个省份的批次线要求不一样，所以有一个 provinceId 参数
+ */
+async function ucode(provinceId, collegeId) {
+    return await axios({
+        // 随便给个 p 参数即可
+        url: 'https://ia-pv4y.youzy.cn/Data/ScoreLines/UCodes/QueryList?p=abc',
+        method: 'POST',
+        data: {
+            data: common.youzyEpt({
+                provinceId: provinceId,
+                collegeId: collegeId
+            })
+        }
+    }).then(res => {
+        let ucode = 0
+        const data = res.data.result
+        if (data.length !== 0) {
+            ucode = data[0].uCodeNum
+            data.forEach(function (r) {
+                var uCodeNumArr = r.uCodeNum.split('_').reverse()
+                if (uCodeNumArr[0] == '0' && uCodeNumArr[1] == '0') {
+                    uCode = r.uCodeNum
+                }
+            })
+        }
+        return ucode
+    }).catch(err => {
+        console.log(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
+    })
+}
+
+/**
+ * 爬取大学每年的分数线信息
+ */
 async function queryScoreLines() {
     // 结果存储文件夹
-    const resultDir = path.normalize(`${__dirname}/colleges-score-lines`)
+    const resultDir = path.normalize(`${BasePath}/data/encrypt`)
     // 引入省份id和名字 大学id和名字
-    const provinces = JSON.parse(fs.readFileSync('./province.json'))
-    const colleges = JSON.parse(fs.readFileSync('./colleges/colleges.json'))
+    const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
+    const colleges = JSON.parse(fs.readFileSync(`${BasePath}/json/colleges.json`))
 
-    // 上海爬到一半有问题，先跳过
-    const id = '848'
-    let provinceName = provinces[id]
-    let result = []
-    for (let i = 0; i < colleges.length; i++) {
-        let college = colleges[i]
+    for (let id in provinces) {
+        let provinceName = provinces[id]
+        let result = []
+        for (let i = 0; i < colleges.length; i++) {
+            let college = colleges[i]
 
-        const cid = college.cid
-        const cName = college.cName
-        await ucode(id, cid).then(async res => {
-            const uCode = res
-            console.log(cid, cName, uCode);
+            const cid = college.cid
+            const cName = college.cName
+            await ucode(id, cid).then(async res => {
+                const uCode = res
+                console.log(cid, cName, uCode);
 
-            if (uCode === 0 || uCode === undefined) {
-                return
-            }
-            // 通过 ucode 获取往年该大学在该省份的录取分数线
-            await axios({
-                url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Colleges/Query?p=abc',
-                method: 'POST',
-                data: {
-                    data: common.youzyEpt({
-                        provinceNumId: id,
-                        ucode: uCode
-                    })
+                if (uCode === 0 || uCode === undefined) {
+                    return
                 }
-            }).then(res => {
-                result.push({
-                    cid: cid,
-                    cName: cName,
-                    uCode: uCode,
-                    provinceId: id,
-                    scoreLines: res.data.result
-                })
-            }).catch(err => {
-                console.log(`${cName}+++${err.errno}+++${err.code}`)
-            })
-            console.log(provinceName, '==>', cName, `剩 ${colleges.length - i - 1} 个`);
-        })
-        await sleep(Math.floor(Math.random() * 10) * 50)
-    }
+                // 通过 ucode 获取往年该大学在该省份的录取分数线
+                await axios({
+                    url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Colleges/Query?p=abc',
+                    method: 'POST',
+                    data: {
+                        data: common.youzyEpt({
+                            provinceNumId: id,
+                            ucode: uCode
+                        })
+                    }
+                }).then(res => {
+                    result.push({
+                        cid: cid,
+                        cName: cName,
+                        uCode: uCode,
+                        provinceId: id,
+                        scoreLines: res.data.result
+                    })
+                }).catch(err => {
+                    console.log(`${cName}+++${err.errno}+++${err.code}`)
+                }) 
+                console.log(provinceName, '==>', cName, `剩 ${colleges.length - i - 1} 个`); 
+            }) 
+            await sleep.millisecond(Math.floor(Math.random() * 10) * 50)
+        }
 
-    fs.writeFileSync(`${resultDir}/${provinceName}.json`, JSON.stringify(result))
-    console.log(provinceName, 'completely');
+        fs.writeFileSync(`${resultDir}/${provinceName}.json`, JSON.stringify(result))
+        console.log(provinceName, 'completely');
+    }
 }
 
 /**
  * 解析密文 
  */
 function parseData(collegeData, result) {
-    const r = {
-        cid: collegeData.cid,
-        cName: collegeData.cName,
-        uCode: collegeData.uCode,
-        provinceId: collegeData.id,
-        scoreLines: []
-    }
-
+    const scoreLines = []
     let sl
     for (let i = 0; i < collegeData.scoreLines.length; i++) {
         sl = collegeData.scoreLines[i]
-        r.scoreLines.push({
+        scoreLines.push({
             year: sl.year,
             course: sl.course,
             batch: sl.batch,
@@ -193,33 +207,47 @@ function parseData(collegeData, result) {
             prvControlLines: sl.prvControlLines
         })
     }
-
-    result.push(r)
-}
-
-function parseDir(){
-    // 结果存储文件夹
-    const targetDir = path.normalize(`${__dirname}/colleges-score-lines/ddata`)
-    const sourceDir = path.normalize(`${__dirname}/colleges-score-lines`)
-    // 引入省份id和名字
-    const provinces = JSON.parse(fs.readFileSync('./province.json'))
-
-    const provinceName, collegeData, c 
-    let result
-    for(let id in provinces){
-        result = []
-        provinceName = provinces[i]
-        collegeData = JSON.parse(fs.readFileSync(`${sourceDir}/${provinceName}.json`))
-        for(let i = 0; i < collegeData.length; i++){
-            c = collegeData[i]
-            parseData(c, result)
-        }
-        fs.writeFileSync(`${targetDir}/${provinceName}.json`, JSON.stringify(result))    
+    // 有分数的大学再存储起来
+    if (scoreLines.length > 0) {
+        result.push({
+            cid: collegeData.cid,
+            cName: collegeData.cName,
+            uCode: collegeData.uCode,
+            provinceId: collegeData.provinceId,
+            scoreLines: scoreLines
+        })
     }
 }
 
-// ucode(1, 838).then(res => console.log(res) )
+function parseDir() {
+    // 结果存储文件夹
+    const targetDir = path.normalize(`${BasePath}/data/decrypt`)
+    const sourceDir = path.normalize(`${BasePath}/data/encrypt`)
+    // 引入省份id和名字
+    const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
 
+    let provinceName, collegeData, college, filePath
+    let result
+    for (let id in provinces) {
+        result = []
+        provinceName = provinces[id]
+        filePath = path.normalize(`${sourceDir}/${provinceName}.json`)
+        if (fs.existsSync(filePath)) {
+            collegeData = JSON.parse(fs.readFileSync(filePath))
+            for (let i = 0; i < collegeData.length; i++) {
+                college = collegeData[i]
+                parseData(college, result)
+            }
+            fs.writeFileSync(`${targetDir}/${provinceName}.json`, JSON.stringify(result))
+        }
+    }
+}
+
+// 1. 爬取各大学的id
+// collegeList()
+// 2. 解析网页代码，拿到各大学的id和名字
 // parseHtmlDir()
-
+// 3. 爬取大学每年的分数线信息
 queryScoreLines()
+// 4. 数据解析
+// parseDir()
