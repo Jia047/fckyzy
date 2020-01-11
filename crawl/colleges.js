@@ -9,6 +9,7 @@ const path = require('path')
 const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
 const sleep = require('../utils/sleep')
+const ucode = require('./ucode')
 
 const BasePath = './data/collegeScoreLines'
 
@@ -24,7 +25,7 @@ async function collegeList() {
         method: 'GET',
         params: params,
         headers: {
-            // 需要设置省份的 cookie，不然会发生重定向到另一个网页进行省份设置，不信你把cookie注释掉，自己试试
+            // 需要设置省份的 cookie，不然会发生重定向到另一个网页进行省份设置
             'Cookie': 'Youzy2CCurrentProvince=%7B%22provinceId%22%3A848%2C%22provinceName%22%3A%22%E6%B2%B3%E5%8D%97%22%2C%22isGaokaoVersion%22%3Afalse%7D;'
         }
     }
@@ -96,6 +97,7 @@ function parseHtmlDir() {
 /**
  * 获取大学的 ucode，因为每个省份的批次线要求不一样，所以有一个 provinceId 参数
  */
+/*
 async function ucode(provinceId, collegeId) {
     return await axios({
         // 随便给个 p 参数即可
@@ -123,7 +125,7 @@ async function ucode(provinceId, collegeId) {
     }).catch(err => {
         console.log(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
     })
-}
+} */
 
 /**
  * 爬取大学每年的分数线信息
@@ -139,43 +141,41 @@ async function queryScoreLines() {
         let provinceName = provinces[id]
         let result = []
         for (let i = 0; i < colleges.length; i++) {
-            let college = colleges[i]
-
+            const college = colleges[i]
             const cid = college.cid
             const cName = college.cName
-            await ucode(id, cid).then(async res => {
+
+            await ucode.query(id, cid).then(async res => {
                 const uCode = res
                 console.log(cid, cName, uCode);
 
-                if (uCode === 0 || uCode === undefined) {
-                    return
+                if (uCode !== 0 && uCode !== undefined) {
+                    await axios({
+                        url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Colleges/Query?p=abc',
+                        method: 'POST',
+                        data: {
+                            data: common.youzyEpt({
+                                provinceNumId: id,
+                                ucode: uCode
+                            })
+                        }
+                    }).then(res => {
+                        result.push({
+                            cid: cid,
+                            cName: cName,
+                            uCode: uCode,
+                            provinceId: id,
+                            scoreLines: res.data.result
+                        })
+                    }).catch(err => {
+                        console.log(`${cName}+++${err.errno}+++${err.code}`)
+                    })
+                    console.log(`${provinceName} ==>`, cName, `剩 ${colleges.length - i - 1} 个`);
                 }
                 // 通过 ucode 获取往年该大学在该省份的录取分数线
-                await axios({
-                    url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Colleges/Query?p=abc',
-                    method: 'POST',
-                    data: {
-                        data: common.youzyEpt({
-                            provinceNumId: id,
-                            ucode: uCode
-                        })
-                    }
-                }).then(res => {
-                    result.push({
-                        cid: cid,
-                        cName: cName,
-                        uCode: uCode,
-                        provinceId: id,
-                        scoreLines: res.data.result
-                    })
-                }).catch(err => {
-                    console.log(`${cName}+++${err.errno}+++${err.code}`)
-                }) 
-                console.log(provinceName, '==>', cName, `剩 ${colleges.length - i - 1} 个`); 
-            }) 
-            await sleep.millisecond(Math.floor(Math.random() * 10) * 50)
+                await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
+            })
         }
-
         fs.writeFileSync(`${resultDir}/${provinceName}.json`, JSON.stringify(result))
         console.log(provinceName, 'completely');
     }

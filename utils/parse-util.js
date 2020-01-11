@@ -22,7 +22,7 @@ function toUni(str) {
  */
 function parseCN(encryptCN) {
     let result = ''
-    if(encryptCN === '' || encryptCN.match('-')){
+    if (encryptCN === undefined || encryptCN === '' || encryptCN.match('-')) {
         return result
     }
     // 先将密文转化为 &#x(.*); 形如 上;&#xc6bb;&#xc6bb;&#xc62b;&#xc66f;&#xc674;
@@ -30,13 +30,13 @@ function parseCN(encryptCN) {
     const decryptCN = common.cnDeCrypt(subStr(encryptCN)).slice(0, -1)
     // 将 decryptCN 按【;】分割成数组，再将每个元素转化成 unicode 形式
     // 然后在映射表中找到对应的中文
-    
+
     decryptCN.split('|').forEach(s => {
         // 如果本身就是中文，则不用进行映射转换
         // if (CHINESE.test(s)) {
         //     result += s
         // } else 
-        if(CHARACTER.test(s)){
+        if (CHARACTER.test(s)) {
             str = s.replace(/【|】/gm, '')
 
             result += str
@@ -52,7 +52,9 @@ function parseCN(encryptCN) {
  */
 function parseNUM(encryptNUM) {
     let result = ''
-    if(encryptNUM === '' || encryptNUM === 0 || encryptNUM.match('-')){
+
+    if (encryptNUM === undefined || encryptNUM === ''
+        || encryptNUM === 0 || encryptNUM.match('-')) {
         return result
     }
 

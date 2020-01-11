@@ -5,38 +5,9 @@ const fs = require('fs')
 const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
 const sleep = require('../utils/sleep')
+const ucode = require('./ucode')
 
 const BasePath = './data/professionScoreLines/'
-
-/**
- * professionsData 专业信息密文 
- */
-function parseData(professionsData, result) {
-    let p
-    for (let i = 0; i < professionsData; i++) {
-        p = professionsData[i]
-        result.push({
-            year: p.year,
-            courseType: p.courseType,
-            batch: p.batch,
-            batchName: p.batchName,
-            uCode: p.ucode,
-            chooseLevel: p.chooseLevel,
-            lineDiff: p.lineDiff,
-            majorCode: p.majorCode,
-            professionName: ParseUtil.parseCN(p.professionName),
-            professionCode: ParseUtil.parseCN(p.professionCode),
-            remarks: p.remarks,
-            maxScore: ParseUtil.parseNUM(p.maxScore),
-            minScore: ParseUtil.parseNUM(p.minScore),
-            avgScore: ParseUtil.parseNUM(p.avgScore),
-            lowSort: ParseUtil.enterNum(p.lowSort),
-            maxSort: p.maxSort,
-            enterNum: ParseUtil.parseNUM(p.enterNum),
-            countOfZJZY: p.countOfZJZY
-        })
-    }
-}
 
 async function query() {
     // 结果存储文件夹
@@ -51,57 +22,126 @@ async function query() {
     const yearTo = 2018
     // 1-文科，0-理科
     const courseType = 1
+    const courseTypeStr = courseType === 1 ? '文科' : '理科'
 
-    console.log(`crawl ${courseType === 1 ? 'wenke' : 'like'}`);
+    let provinceName, college, cid, cName
+    let collegeProInfo = []
+    for (let i = 0; i < colleges.length; i++) {
+        collegeProInfo = []
 
-    // for (let id in provinces) {
-        const id = 842
-        const provinceName = provinces[id]
+        college = colleges[i]
+        cid = college.cid
+        cName = college.cName
 
-        // 省份文件夹
-        const provinceDir = path.normalize(`${resultDir}/provinceName`)
-        if (!fs.existsSync(provinceDir)) {
-            fs.mkdirSync(provinceDir)
-        }
+        for (let provinceId in provinces) {
+            provinceName = provinces[provinceId]
 
-        for (let i = 0; i < colleges.length; i++) {
-            
-            const college = colleges[i]
-            const cid = college.cid
-            const cName = college.cName
+            await ucode.query(provinceId, cid).then(async res => {
+                const uCode = res
 
-            await ucode(id, cid).then(async res => {
-                uCode = res
-                if (uCode === 0 || uCode === undefined) {
-                    return
+                if (uCode !== 0 && uCode !== undefined) {
+                    await axios({
+                        url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Professions/Query?p=abc',
+                        method: 'POST',
+                        data: {
+                            data: common.youzyEpt({
+                                uCode: uCode,
+                                // batch: 0,
+                                courseType: courseType,
+                                yearFrom: yearFrom,
+                                yearTo: yearTo
+                            })
+                        }
+                    }).then(res => {
+                        if (res.data.result.length > 0) {
+                            collegeProInfo.push({
+                                provinceId: provinceId,
+                                proInfo: res.data.result
+                            })
+                        }
+                    }).catch(err => {
+                        console.log(cName, provinceName, err.errno);
+
+                    })
                 }
-
-                await axios({
-                    url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Professions/Query?p=abc',
-                    method: 'POST',
-                    data: {
-                        data: common.youzyEpt({
-                            uCode: uCode,
-                            // batch: 0,
-                            courseType: courseType,
-                            yearFrom: yearFrom,
-                            yearTo: yearTo
-                        })
-                    }
-                }).then(res => {
-                    fs.writeFileSync(`${provinceDir}/${cid}.json`, JSON.stringify(res.data.result))
-                })
-
             })
 
-            console.log(provinceName, '==>', cName, `剩 ${colleges.length - i - 1} 个`);
+            console.log(cName, courseTypeStr, provinceName, `${colleges.length - i - 1} college left`);
+            await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
+        }
+        if (collegeProInfo.length > 0) {
+            fs.writeFileSync(`${resultDir}/${cid}.json`, JSON.stringify(collegeProInfo))
         }
 
-        await sleep.millisecond(Math.floor(Math.random() * 10) * 100)
-        console.log(provinceName, 'completely');
-
-    // }
+        console.log(cName, 'completely');
+    }
 }
 
+/**
+ * professionsData 专业信息密文 
+ */
+function parseData(professionsData, result) {
+    let pd
+    let proInfo = []
+    for (let i = 0; i < professionsData.length; i++) {
+        proInfo = []
+        pd = professionsData[i]
 
+        pd.proInfo.forEach(p => {
+            proInfo.push({
+                year: p.year,
+                courseType: p.courseType,
+                batch: p.batch,
+                batchName: p.batchName,
+                uCode: p.uCode,
+                chooseLevel: p.chooseLevel,
+                lineDiff: p.lineDiff,
+                majorCode: p.majorCode,
+                professionName: ParseUtil.parseCN(p.professionName),
+                professionCode: ParseUtil.parseCN(p.professionCode),
+                remarks: p.remarks,
+                maxScore: ParseUtil.parseNUM(p.maxScore),
+                minScore: ParseUtil.parseNUM(p.minScore),
+                avgScore: ParseUtil.parseNUM(p.avgScore),
+                lowSort: ParseUtil.parseNUM(p.lowSort),
+                maxSort: p.maxSort,
+                enterNum: ParseUtil.parseNUM(p.enterNum),
+                countOfZJZY: p.countOfZJZY
+            })
+        })
+
+        if (proInfo.length > 0) {
+            result.push({
+                provinceId: pd.provinceId,
+                proInfo: proInfo
+            })
+        }
+    }
+
+}
+
+function parseDir() {
+    // 结果存储文件夹
+    const targetDir = path.normalize(`${BasePath}/data/decrypt`)
+    const sourceDir = path.normalize(`${BasePath}/data/encrypt`)
+
+    let source
+    let result = []
+    fs.readdir(sourceDir, (err, files) => {
+        files.forEach(file => {
+            result = []
+            source = JSON.parse(fs.readFileSync(`${sourceDir}/${file}`))
+
+            parseData(source, result)
+            if (result.length > 0) {
+                fs.writeFileSync(`${targetDir}/${file}`, JSON.stringify(result))
+            }
+            console.log(`parse ${file}`)
+        })
+    })
+}
+
+// 1. 查数据
 // query()
+// 2. 数据解析
+parseDir()
