@@ -5,13 +5,17 @@ const cheerio = require('cheerio')
 
 const common = require('../services/common/common')
 const sleep = require('../utils/sleep')
+const log = require('../utils/log')
 
 const provinces = JSON.parse(fs.readFileSync('./json/province.json', 'utf-8'))
 
 const BasePath = './data/scoreLines/'
+const logger = log.getLogger({
+    filename: 'scoreLines'
+})
 
 /**
- * axios 配置
+ * axios 置
  */
 axios.defaults.baseURL = 'https://ia-pv4y.youzy.cn'
 
@@ -35,7 +39,7 @@ async function crawlHtml() {
             res && fs.writeFileSync(`${BasePath}/html/${provinceName}.html`, res.data)
         })
 
-        console.log('crawl ==>', provinceName)
+        logger.info('crawl', provinceName)
         await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
     }
 }
@@ -76,7 +80,7 @@ function parseHtml(htmlName, result) {
         })
 
     } catch (err) {
-        console.log(err)
+        logger.error(err.errno)
     }
 }
 
@@ -84,7 +88,7 @@ function parseHtmlDir() {
     const dir = path.normalize(BasePath + '/html/')
 
     if (!fs.existsSync(dir)) {
-        console.log("directory not exists", dir)
+        logger.info("directory not exists", dir)
         return
     }
     fs.readdir(dir, (err, files) => {
@@ -100,6 +104,6 @@ function parseHtmlDir() {
 }
 
 // 1. 先爬
-// crawlHtml()
+crawlHtml()
 // 2. 再提
-parseHtmlDir()
+// parseHtmlDir()

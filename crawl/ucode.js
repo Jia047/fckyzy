@@ -4,8 +4,13 @@ const fs = require('fs')
 
 const common = require('../services/common/common')
 const sleep = require('../utils/sleep')
+const log = require('../utils/log')
 
 const BasePath = './data/ucode'
+const logger = log.getLogger({
+    filename: 'ucode'
+})
+
 const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
 const colleges = JSON.parse(fs.readFileSync('./data/collegeScoreLines/json/colleges.json'))
 
@@ -34,7 +39,7 @@ async function ucode(provinceId, collegeId) {
         }
         return ucode
     }).catch(err => {
-        console.log(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
+        logger.error(provinceId, collegeId, err.errno, err.code);
     })
 }
 
@@ -48,13 +53,13 @@ async function collect() {
     for (let id in provinces) {
         result = []
         provinceName = provinces[id]
-    
+
         for (let i = 0; i < colleges.length; i++) {
             college = colleges[i]
             await ucode(id, college.cid).then(res => {
                 code = res
-                console.log(provinceName, college.cName, code);
-                
+                logger.info(provinceName, college.cName, code);
+
                 result.push({
                     cid: college.cid,
                     provinceId: id,
@@ -66,8 +71,8 @@ async function collect() {
         }
 
         fs.writeFileSync(`${BasePath}/${provinceName}.json`, JSON.stringify(result))
-        console.log(`${provinceName} completely`);
-        
+        logger.info(`${provinceName} completely`);
+
     }
 }
 // 只有要爬取 ucode 的时候，才有必要调用 collec() 函数，平时注释掉

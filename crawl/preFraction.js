@@ -6,10 +6,14 @@ const path = require('path')
 const common = require('../services/common/common')
 const sleep = require('../utils/sleep')
 const ParseUtil = require('../utils/parse-util')
+const log = require('../utils/log')
 
 const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
 
 const PRE_FRACTION_DIR = path.normalize(__dirname + '/data/preFraction/')
+const logger = log.getLogger({
+    filename: 'preFraction'
+})
 
 const PAGE_SIZE = 5
 const OPTIONS = {
@@ -39,10 +43,10 @@ async function crawlHtml() {
             }
         }).then(res => {
             fs.writeFileSync(`./data/preFraction/html/${provinces[key]}.html`, res.data)
-            console.log(provinces[key], 'completely');
+            logger.info(provinces[key], 'completely');
 
         }).catch(err => {
-            console.log(err);
+            logger.error(provinces[key], err.errno);
         })
     }
 }
@@ -98,7 +102,7 @@ function parseHtml(htmlFileName, createFileName, provinceName, provinceId) {
         }
 
     } catch (err) {
-        console.log(err);
+        logger.error(htmlFileName, err.errno);
     }
 }
 
@@ -124,9 +128,9 @@ function parseHtmlDir() {
 
             const htmlFileName = path.normalize(htmlDir + `/${file}`)
             const createFileName = path.normalize(jsonDir + `/${provinceName}.json`)
-            console.log('====')
-            console.log(htmlFileName)
-            console.log(createFileName)
+            logger.info('====')
+            logger.info(htmlFileName)
+            logger.info(createFileName)
             parseHtml(htmlFileName, createFileName, provinceName, provinceId)
         })
     })
@@ -204,11 +208,13 @@ async function crawlData() {
                                     }
 
                                 })
-                                console.log(`${provinceName}==${fenlei.name}==${college.name}==${pcx.name}== ${totalCount} == ${i}/${maxPage}`);
+                                logger.info(provinceName,fenlei.name,college.name, pcx.name, totalCount, `${i}/${maxPage}`);
 
                                 await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
                             }
                         }
+                    }).catch(err => {
+                        logger.error(provinceName, fenlei.name, college.name, err.errno)
                     })
                 }
             }
@@ -269,6 +275,10 @@ function parseDir() {
             fs.mkdirSync(td)
         }
         fs.readdir(`${sourceDir}/${dir}`, (err, files) => {
+            if(err){
+                logger.error(err.errno)
+                return
+            }
             files.forEach(file => {
                 // 读取路径
                 const sourceFilePath = path.normalize(`${sourceDir}/${dir}/${file}`)
@@ -282,7 +292,7 @@ function parseDir() {
                 if (target.length > 0) {
                     fs.writeFileSync(targetFilePath, JSON.stringify(target))
                 }
-                console.log(`${dir}==${file}`);
+                logger.info(`${dir}==${file}`);
                 
             })
         })

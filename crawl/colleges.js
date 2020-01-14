@@ -10,8 +10,12 @@ const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
 const sleep = require('../utils/sleep')
 const ucode = require('./ucode')
+const log = require('../utils/log')
 
 const BasePath = './data/collegeScoreLines'
+const logger = log.getLogger({
+    filename: 'colleges'
+})
 
 /**
  * 获取所有大学的id,
@@ -37,7 +41,7 @@ async function collegeList() {
         if (!isNaN(tp)) {
             totalPages = tp + 1
         }
-        console.log('total page', totalPages);
+        logger.info('total page', totalPages);
 
     })
 
@@ -46,15 +50,15 @@ async function collegeList() {
 
         await axios(options).then(res => {
             fs.writeFileSync(path.normalize(`${BasePath}/html/c_page_${i}.html`), res.data)
-            console.log(`crawl page_${i}`);
+            logger.info(`crawl page_${i}`);
 
         }).catch(err => {
-            console.log(err.errno);
+            logger.info(err.errno);
         })
 
         await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
     }
-    console.log(`crawl page completely, total page ${totalPages}`);
+    logger.info(`crawl page completely, total page ${totalPages}`);
 
 }
 
@@ -73,11 +77,11 @@ function parseHtml(htmlFile, result) {
                 cid: cid,
                 cName: cName
             })
-            console.log(cName, cid);
+            logger.info(cName, cid);
         })
 
     } catch (err) {
-        console.log(err);
+        logger.error(htmlFile,err.errno);
     }
 }
 
@@ -123,7 +127,7 @@ async function ucode(provinceId, collegeId) {
         }
         return ucode
     }).catch(err => {
-        console.log(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
+        logger.info(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
     })
 } */
 
@@ -147,7 +151,7 @@ async function queryScoreLines() {
 
             await ucode.query(id, cid).then(async res => {
                 const uCode = res
-                console.log(cid, cName, uCode);
+                logger.info(cid, cName, uCode);
 
                 if (uCode !== 0 && uCode !== undefined) {
                     await axios({
@@ -168,16 +172,16 @@ async function queryScoreLines() {
                             scoreLines: res.data.result
                         })
                     }).catch(err => {
-                        console.log(`${cName}+++${err.errno}+++${err.code}`)
+                        logger.error(`${cName} ${err.errno} ${err.code}`)
                     })
-                    console.log(`${provinceName} ==>`, cName, `剩 ${colleges.length - i - 1} 个`);
+                    logger.info(provinceName, cName, `剩 ${colleges.length - i - 1} 个`);
                 }
                 // 通过 ucode 获取往年该大学在该省份的录取分数线
                 await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
             })
         }
         fs.writeFileSync(`${resultDir}/${provinceName}.json`, JSON.stringify(result))
-        console.log(provinceName, 'completely');
+        logger.info(provinceName, 'completely');
     }
 }
 

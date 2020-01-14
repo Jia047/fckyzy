@@ -6,8 +6,12 @@ const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
 const sleep = require('../utils/sleep')
 const ucode = require('./ucode')
+const log = require('../utils/log')
 
 const BasePath = './data/professionScoreLines/'
+const logger = log.getLogger({
+    filename: 'profession'
+})
 
 async function query() {
     // 结果存储文件夹
@@ -60,20 +64,20 @@ async function query() {
                             })
                         }
                     }).catch(err => {
-                        console.log(cName, provinceName, err.errno);
+                        logger.error(cName, provinceName, err.errno);
 
                     })
                 }
             })
 
-            console.log(cName, courseTypeStr, provinceName, `${colleges.length - i - 1} college left`);
+            logger.info(cName, courseTypeStr, provinceName, `剩 ${colleges.length - i - 1} 个`);
             await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
         }
         if (collegeProInfo.length > 0) {
             fs.writeFileSync(`${resultDir}/${cid}.json`, JSON.stringify(collegeProInfo))
         }
 
-        console.log(cName, 'completely');
+        logger.info(cName, 'completely');
     }
 }
 
@@ -128,6 +132,9 @@ function parseDir() {
     let source
     let result = []
     fs.readdir(sourceDir, (err, files) => {
+        if(err){
+            logger.error(err.errno)
+        }
         files.forEach(file => {
             result = []
             source = JSON.parse(fs.readFileSync(`${sourceDir}/${file}`))
@@ -136,12 +143,12 @@ function parseDir() {
             if (result.length > 0) {
                 fs.writeFileSync(`${targetDir}/${file}`, JSON.stringify(result))
             }
-            console.log(`parse ${file}`)
+            logger.info(`parse ${file}`)
         })
     })
 }
 
 // 1. 查数据
-// query()
+query()
 // 2. 数据解析
-parseDir()
+// parseDir()
