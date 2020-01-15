@@ -149,6 +149,6 @@ function parseDir() {
 }
 
 // 1. 查数据
-query()
+// query()
 // 2. 数据解析
 // parseDir()

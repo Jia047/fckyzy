@@ -306,6 +306,6 @@ function parseDir() {
 // 2. 把爬下来的网页进行解析，拿到各学院各批次的 typeId
 // parseHtmlDir()
 // 3. 通过 typeId 获取各个批次的详细信息
-// crawlData()
+crawlData()
 // 4. 把爬取下来的数据进行解密
 // parseDir()

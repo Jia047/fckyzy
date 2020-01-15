@@ -252,6 +252,6 @@ function parseDir() {
 // 2. 解析网页代码，拿到各大学的id和名字
 // parseHtmlDir()
 // 3. 爬取大学每年的分数线信息
-queryScoreLines()
+// queryScoreLines()
 // 4. 数据解析
 // parseDir()

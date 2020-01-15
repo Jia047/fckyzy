@@ -1,6 +1,7 @@
 // 创建一些初始的文件夹，用来存放数据
 const fs = require('fs')
 
+const LOG = './log'
 const DATA = __dirname + '/crawl/data'
 const PRE_FRACTION = `${DATA}/preFraction`
 const COLLEGE_SCORE_LINES = `${DATA}/collegeScoreLines`
@@ -32,6 +33,8 @@ const sco_html = `${SCORE_LINES}/html`
 const sco_json = `${SCORE_LINES}/json`
 
 const DIRS = [
+    LOG, 
+
     DATA, 
     
     PRE_FRACTION, COLLEGE_SCORE_LINES, PROFESSION_SCORE_LINES, SCORE_LINES, UCODE,
@@ -46,7 +49,6 @@ const DIRS = [
 ]
 
 DIRS.forEach(dir => {
-    
     if (!fs.existsSync(dir)) {
         console.log(dir)
         fs.mkdirSync(dir)
