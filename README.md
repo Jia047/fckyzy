@@ -26,6 +26,11 @@
 - init.js ：用来初始化项目，主要是用来建立文件夹，比如`data`，`log`。需要在**项目运行前先运行该文件，以避免因为文件夹不存在引起 `fs` 模块的报错。**
 - crawl: 数据爬取，其子文件夹如下：
   - data: 用来存储提前批、大学分数线、大学专业分数线、ucode等数据，其子文件夹的结果如下：
+    - collegeScoreLines: 院校分数线数据。
+    - preFraction：提前批数据。
+    - professionScoreLines: 院校专业分数线信息。
+    - ucode：大学在各省份对应的`ucode`。
+    > 每个文件夹的子文件夹都是一样的，包括 `data`,`html`,`json`。用途如下：
     - data：用来存储接口获取的数据以及将数据解析后进行存储，有两个子文件夹：
       - encrypt：接口响应数据，是加密数据。
       - decrypt：将`encrypt`文件夹进行解析，其结构与`encrypt`一模一样。
@@ -36,7 +41,7 @@
   - colleges.js: 获取院校分数线的`js`文件，需要单独运行，运行命令`node colleges.js`。
   - preFraction.js: 获取提前批数据的`js`文件，需要单独运行，运行命令`node preFraction.js`。
   - professions.js: 获取院校各专业分数线的`js`文件，需要单独运行，运行命令`node professions.js`。
-  - ucode: 获取各个学校在各个省份对应的`ucode`的`js`文件，需要单独云南行，运行命令`node ucode.js`。
+  - ucode.js: 获取各个学校在各个省份对应的`ucode`的`js`文件，需要单独云南行，运行命令`node ucode.js`。
   - province.js：生成省份信息的json文件，放在`json`文件夹。需要单独运行，运行命令`node province.js`
 - log：存放运行日志的文件夹，通过`init.js`生成该文件夹。
 - services：从浏览器保存下来的`js`文件。
@@ -66,7 +71,7 @@
   - response
     - data: 请求到的数据，res.data 就可以拿到网页代码。
   
-> 省份信息例子: { "provinceId": 842, "provinceName": '上海', "isGaokaoVersion": false }，isGaoKaoVersion 目前不清楚它的作用是什么，都是写固定为 false
+> 省份信息例子: { "provinceId": 842, "provinceName": '上海', "isGaokaoVersion": false }，isGaoKaoVersion 目前不清楚它的作用是什么，都是写固定为 false。
 
 ### 解析网页
 - 分析爬取下来的网页代码，部分省份是没有提前批的院校信息的，所以最后没有生成该省份对应的`json`文件。
