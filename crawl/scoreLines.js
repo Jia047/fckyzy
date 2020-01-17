@@ -2,6 +2,7 @@ const axios = require('axios')
 const fs = require('fs')
 const path = require('path')
 const cheerio = require('cheerio')
+const async = require('async')
 
 const common = require('../services/common/common')
 const sleep = require('../utils/sleep')
@@ -24,6 +25,7 @@ axios.defaults.baseURL = 'https://ia-pv4y.youzy.cn'
  * 不可用
  */
 async function crawlHtml() {
+    logger.info('crawl html')
     let provinceName, encryptCode
     for (id in provinces) {
         provinceName = provinces[id]
@@ -85,6 +87,7 @@ function parseHtml(htmlName, result) {
 }
 
 function parseHtmlDir() {
+    logger.info('parse html dir')
     const dir = path.normalize(BasePath + '/html/')
 
     if (!fs.existsSync(dir)) {
@@ -104,6 +107,11 @@ function parseHtmlDir() {
 }
 
 // 1. 先爬
-crawlHtml()
+// crawlHtml()
 // 2. 再提
 // parseHtmlDir()
+
+async.series([crawlHtml, parseHtmlDir], (err, result) => {
+    err && logger.error(err)
+    logger.info(result)
+})

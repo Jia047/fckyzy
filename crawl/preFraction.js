@@ -2,6 +2,7 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 const fs = require('fs')
 const path = require('path')
+const __async = require('async')
 
 const common = require('../services/common/common')
 const sleep = require('../utils/sleep')
@@ -25,6 +26,7 @@ const OPTIONS = {
  * 抓取每个省份的提前批数据展示网页
  */
 async function crawlHtml() {
+    logger.info('crawl html')
     for (key in provinces) {
         let p = { "provinceId": key, "provinceName": provinces[key], "isGaokaoVersion": false }
         let encryptP = common.youzyEpt(p)
@@ -110,6 +112,7 @@ function parseHtml(htmlFileName, createFileName, provinceName, provinceId) {
  * 遍历目录，解析 .html 文件
  */
 function parseHtmlDir() {
+    logger.info('parse html dir')
     const htmlDir = path.normalize(__dirname + '/data/preFraction/html')
     const jsonDir = path.normalize(__dirname + '/data/preFraction/json')
     const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
@@ -128,7 +131,6 @@ function parseHtmlDir() {
 
             const htmlFileName = path.normalize(htmlDir + `/${file}`)
             const createFileName = path.normalize(jsonDir + `/${provinceName}.json`)
-            logger.info('====')
             logger.info(htmlFileName)
             logger.info(createFileName)
             parseHtml(htmlFileName, createFileName, provinceName, provinceId)
@@ -151,7 +153,7 @@ function bulidQueryObj(typeId, year, provinceId) {
 }
 
 async function crawlData() {
-
+    logger.info('crawl data')
     const typeInfoDir = path.normalize(PRE_FRACTION_DIR + '/json/')
     const resultStoreDir = path.normalize(PRE_FRACTION_DIR + '/data/encrypt/')
 
@@ -265,6 +267,7 @@ function parseData(source, target) {
 }
 
 function parseDir() {
+    logger.info('parse dir')
     const sourceDir = path.normalize(PRE_FRACTION_DIR + '/data/encrypt/')
     const targetDir = path.normalize(PRE_FRACTION_DIR + '/data/decrypt/')
 
@@ -306,6 +309,11 @@ function parseDir() {
 // 2. 把爬下来的网页进行解析，拿到各学院各批次的 typeId
 // parseHtmlDir()
 // 3. 通过 typeId 获取各个批次的详细信息
-crawlData()
+// crawlData()
 // 4. 把爬取下来的数据进行解密
 // parseDir()
+
+__async.series([crawlHtml, parseHtmlDir, crawlData, parseData], (err, result) => {
+    err && logger.error(err.errno)
+    logger.info(result)
+})

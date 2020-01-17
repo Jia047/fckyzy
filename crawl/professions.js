@@ -1,6 +1,7 @@
 const axios = require('axios')
 const path = require('path')
 const fs = require('fs')
+const async = require('async')
 
 const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
@@ -152,3 +153,7 @@ function parseDir() {
 // query()
 // 2. 数据解析
 // parseDir()
+async.series([query, parseDir], (err, result) => {
+    err && logger.error(err)
+    logger.info(result)
+})

@@ -5,6 +5,7 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 const fs = require('fs')
 const path = require('path')
+const async = require('async')
 
 const common = require('../services/common/common')
 const ParseUtil = require('../utils/parse-util')
@@ -21,6 +22,7 @@ const logger = log.getLogger({
  * 获取所有大学的id,
  */
 async function collegeList() {
+    logger.info('get all colleges id')
     // 总页数，默认是 145, 从 1 开始计数
     let totalPages = 146
     const params = { page: 1 }
@@ -39,7 +41,7 @@ async function collegeList() {
         const tp = $('ul.pagination').find('strong').eq(0).text()
         // 得是数值才行
         if (!isNaN(tp)) {
-            totalPages = tp + 1
+            totalPages = parseInt(tp) + 1
         }
         logger.info('total page', totalPages);
 
@@ -86,6 +88,7 @@ function parseHtml(htmlFile, result) {
 }
 
 function parseHtmlDir() {
+    logger.info('parse html dir')
     const dir = path.normalize(`${BasePath}/html/`)
     if (fs.existsSync(dir)) {
         fs.readdir(dir, (err, files) => {
@@ -135,6 +138,7 @@ async function ucode(provinceId, collegeId) {
  * 爬取大学每年的分数线信息
  */
 async function queryScoreLines() {
+    logger.info('query score lines')
     // 结果存储文件夹
     const resultDir = path.normalize(`${BasePath}/data/encrypt`)
     // 引入省份id和名字 大学id和名字
@@ -224,6 +228,7 @@ function parseData(collegeData, result) {
 }
 
 function parseDir() {
+    logger.info('parse dir')
     // 结果存储文件夹
     const targetDir = path.normalize(`${BasePath}/data/decrypt`)
     const sourceDir = path.normalize(`${BasePath}/data/encrypt`)
@@ -255,3 +260,7 @@ function parseDir() {
 // queryScoreLines()
 // 4. 数据解析
 // parseDir()
+async.series([collegeList, parseHtmlDir, queryScoreLines, parseDir], (err, result) => {
+    err && logger.error(err)
+    logger.info(result)
+})
