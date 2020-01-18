@@ -65,7 +65,7 @@ async function query() {
                             })
                         }
                     }).catch(err => {
-                        logger.error(cName, provinceName, err.errno);
+                        logger.error(cName, provinceName, err);
 
                     })
                 }
@@ -134,7 +134,7 @@ function parseDir() {
     let result = []
     fs.readdir(sourceDir, (err, files) => {
         if(err){
-            logger.error(err.errno)
+            logger.error(err)
         }
         files.forEach(file => {
             result = []

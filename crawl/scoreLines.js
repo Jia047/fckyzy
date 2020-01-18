@@ -82,7 +82,7 @@ function parseHtml(htmlName, result) {
         })
 
     } catch (err) {
-        logger.error(err.errno)
+        logger.error(err)
     }
 }
 

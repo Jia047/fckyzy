@@ -55,7 +55,7 @@ async function collegeList() {
             logger.info(`crawl page_${i}`);
 
         }).catch(err => {
-            logger.info(err.errno);
+            logger.info(err);
         })
 
         await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
@@ -83,7 +83,7 @@ function parseHtml(htmlFile, result) {
         })
 
     } catch (err) {
-        logger.error(htmlFile,err.errno);
+        logger.error(htmlFile,err);
     }
 }
 
@@ -130,7 +130,7 @@ async function ucode(provinceId, collegeId) {
         }
         return ucode
     }).catch(err => {
-        logger.info(`${provinceId}==${collegeId}===${err.errno}===${err.code}`);
+        logger.info(`${provinceId}==${collegeId}===${err}===${err.code}`);
     })
 } */
 
@@ -176,7 +176,7 @@ async function queryScoreLines() {
                             scoreLines: res.data.result
                         })
                     }).catch(err => {
-                        logger.error(`${cName} ${err.errno} ${err.code}`)
+                        logger.error(`${cName} ${err} ${err.code}`)
                     })
                     logger.info(provinceName, cName, `剩 ${colleges.length - i - 1} 个`);
                 }

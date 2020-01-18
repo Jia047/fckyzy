@@ -39,7 +39,7 @@ async function ucode(provinceId, collegeId) {
         }
         return ucode
     }).catch(err => {
-        logger.error(provinceId, collegeId, err.errno, err.code);
+        logger.error(provinceId, collegeId, err);
     })
 }
 

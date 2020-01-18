@@ -48,7 +48,7 @@ async function crawlHtml() {
             logger.info(provinces[key], 'completely');
 
         }).catch(err => {
-            logger.error(provinces[key], err.errno);
+            logger.error(provinces[key], err);
         })
     }
 }
@@ -104,7 +104,7 @@ function parseHtml(htmlFileName, createFileName, provinceName, provinceId) {
         }
 
     } catch (err) {
-        logger.error(htmlFileName, err.errno);
+        logger.error(htmlFileName, err);
     }
 }
 
@@ -216,7 +216,7 @@ async function crawlData() {
                             }
                         }
                     }).catch(err => {
-                        logger.error(provinceName, fenlei.name, college.name, err.errno)
+                        logger.error(provinceName, fenlei.name, college.name, err)
                     })
                 }
             }
@@ -279,7 +279,7 @@ function parseDir() {
         }
         fs.readdir(`${sourceDir}/${dir}`, (err, files) => {
             if(err){
-                logger.error(err.errno)
+                logger.error(err)
                 return
             }
             files.forEach(file => {
@@ -314,6 +314,6 @@ function parseDir() {
 // parseDir()
 
 __async.series([crawlHtml, parseHtmlDir, crawlData, parseData], (err, result) => {
-    err && logger.error(err.errno)
+    err && logger.error(err)
     logger.info(result)
 })
