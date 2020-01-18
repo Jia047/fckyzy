@@ -11,8 +11,6 @@ const logger = log.getLogger({
     filename: 'ucode'
 })
 
-const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
-const colleges = JSON.parse(fs.readFileSync('./data/collegeScoreLines/json/colleges.json'))
 
 async function ucode(provinceId, collegeId) {
     return await axios({
@@ -47,6 +45,8 @@ async function ucode(provinceId, collegeId) {
  * 搞起
  */
 async function collect() {
+    const provinces = JSON.parse(fs.readFileSync('./json/province.json'))
+    const colleges = JSON.parse(fs.readFileSync('./data/collegeScoreLines/json/colleges.json'))
 
     let provinceName, college, code
     let result = []
