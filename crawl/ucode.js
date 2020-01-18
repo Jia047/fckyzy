@@ -74,6 +74,7 @@ async function collect() {
         logger.info(`${provinceName} completely`);
 
     }
+    logger.info('collect completely')
 }
 // 只有要爬取 ucode 的时候，才有必要调用 collec() 函数，平时注释掉
 // collect()

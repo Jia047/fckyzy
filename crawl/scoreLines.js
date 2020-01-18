@@ -44,6 +44,7 @@ async function crawlHtml() {
         logger.info('crawl', provinceName)
         await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
     }
+    logger.info('crawl html completely');
 }
 
 /**
@@ -78,7 +79,7 @@ function parseHtml(htmlName, result) {
                 })
             }
             result.push(pcls)
-            
+
         })
 
     } catch (err) {
@@ -97,17 +98,19 @@ function parseHtmlDir() {
     fs.readdir(dir, (err, files) => {
         const result = []
         let file
-        for(let i = 0; i < files.length; i++) {
+        for (let i = 0; i < files.length; i++) {
             file = files[i]
             parseHtml(path.normalize(`${dir}/${file}`), result)
         }
 
         fs.writeFileSync(path.normalize(`${BasePath}/json/score-lines.json`), JSON.stringify(result))
     })
+    logger.info('parse html dir completely');
 }
 
 // 1. 先爬
 // crawlHtml()
+
 // 2. 再提
 // parseHtmlDir()
 

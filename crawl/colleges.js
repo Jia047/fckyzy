@@ -61,7 +61,7 @@ async function collegeList() {
         await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
     }
     logger.info(`crawl page completely, total page ${totalPages}`);
-
+    logger.info('college list completely')
 }
 
 /**
@@ -99,40 +99,9 @@ function parseHtmlDir() {
             fs.writeFileSync(`${BasePath}/json/colleges.json`, JSON.stringify(result))
         })
     }
-}
 
-/**
- * 获取大学的 ucode，因为每个省份的批次线要求不一样，所以有一个 provinceId 参数
- */
-/*
-async function ucode(provinceId, collegeId) {
-    return await axios({
-        // 随便给个 p 参数即可
-        url: 'https://ia-pv4y.youzy.cn/Data/ScoreLines/UCodes/QueryList?p=abc',
-        method: 'POST',
-        data: {
-            data: common.youzyEpt({
-                provinceId: provinceId,
-                collegeId: collegeId
-            })
-        }
-    }).then(res => {
-        let ucode = 0
-        const data = res.data.result
-        if (data.length !== 0) {
-            ucode = data[0].uCodeNum
-            data.forEach(function (r) {
-                var uCodeNumArr = r.uCodeNum.split('_').reverse()
-                if (uCodeNumArr[0] == '0' && uCodeNumArr[1] == '0') {
-                    uCode = r.uCodeNum
-                }
-            })
-        }
-        return ucode
-    }).catch(err => {
-        logger.info(`${provinceId}==${collegeId}===${err}===${err.code}`);
-    })
-} */
+    logger.info('parse html dir completely')
+}
 
 /**
  * 爬取大学每年的分数线信息
@@ -187,6 +156,7 @@ async function queryScoreLines() {
         fs.writeFileSync(`${resultDir}/${provinceName}.json`, JSON.stringify(result))
         logger.info(provinceName, 'completely');
     }
+    logger.info('query score lines completely')
 }
 
 /**
@@ -250,6 +220,7 @@ function parseDir() {
             fs.writeFileSync(`${targetDir}/${provinceName}.json`, JSON.stringify(result))
         }
     }
+    logger.info('parse dir completely')
 }
 
 // 1. 爬取各大学的id

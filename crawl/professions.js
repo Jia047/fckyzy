@@ -80,6 +80,7 @@ async function query() {
 
         logger.info(cName, 'completely');
     }
+logger.info('query completely');
 }
 
 /**
@@ -147,12 +148,15 @@ function parseDir() {
             logger.info(`parse ${file}`)
         })
     })
+logger.info('parse dir completely');
 }
 
 // 1. 查数据
 // query()
+
 // 2. 数据解析
 // parseDir()
+
 async.series([query, parseDir], (err, result) => {
     err && logger.error(err)
     logger.info(result)

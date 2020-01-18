@@ -51,6 +51,7 @@ async function crawlHtml() {
             logger.error(provinces[key], err);
         })
     }
+    logger.info('crawl html completely');
 }
 
 /**
@@ -136,6 +137,7 @@ function parseHtmlDir() {
             parseHtml(htmlFileName, createFileName, provinceName, provinceId)
         })
     })
+    logger.info('pparse html dir completely');
 }
 
 /**
@@ -210,7 +212,7 @@ async function crawlData() {
                                     }
 
                                 })
-                                logger.info(provinceName,fenlei.name,college.name, pcx.name, totalCount, `${i}/${maxPage}`);
+                                logger.info(provinceName, fenlei.name, college.name, pcx.name, totalCount, `${i}/${maxPage}`);
 
                                 await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
                             }
@@ -228,6 +230,7 @@ async function crawlData() {
             fs.writeFileSync(`${dir}/${fenlei.name}.json`, JSON.stringify(collegesResult))
         }
     }
+    logger.info('crawl data completely');
 }
 
 
@@ -264,6 +267,7 @@ function parseData(source, target) {
         })
         target.push(college)
     })
+    logger.info('parse dir completely');
 }
 
 function parseDir() {
@@ -278,7 +282,7 @@ function parseDir() {
             fs.mkdirSync(td)
         }
         fs.readdir(`${sourceDir}/${dir}`, (err, files) => {
-            if(err){
+            if (err) {
                 logger.error(err)
                 return
             }
@@ -296,7 +300,7 @@ function parseDir() {
                     fs.writeFileSync(targetFilePath, JSON.stringify(target))
                 }
                 logger.info(`${dir}==${file}`);
-                
+
             })
         })
     })
