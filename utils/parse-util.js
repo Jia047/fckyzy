@@ -54,7 +54,7 @@ function parseNUM(encryptNUM) {
     let result = ''
 
     if (encryptNUM === undefined || encryptNUM === ''
-        || encryptNUM === 0 || encryptNUM.match('-')) {
+        || encryptNUM === 0 ) {
         return result
     }
 
