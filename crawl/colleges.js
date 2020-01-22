@@ -83,7 +83,7 @@ function parseHtml(htmlFile, result) {
         })
 
     } catch (err) {
-        logger.error(htmlFile,err);
+        logger.error(htmlFile, err);
     }
 }
 
@@ -165,35 +165,37 @@ async function queryScoreLines() {
 function parseData(collegeData, result) {
     const scoreLines = []
     let sl
-    for (let i = 0; i < collegeData.scoreLines.length; i++) {
-        sl = collegeData.scoreLines[i]
-        scoreLines.push({
-            year: sl.year,
-            course: sl.course,
-            batch: sl.batch,
-            batchName: sl.batchName,
-            uCode: sl.uCode,
-            chooseLevel: sl.chooseLevel,
-            lineDiff: sl.lineDiff,
-            minScore: ParseUtil.parseNUM(sl.minScore),
-            avgScore: ParseUtil.parseNUM(sl.avgScore),
-            maxScore: ParseUtil.parseNUM(sl.maxScore),
-            lowSort: ParseUtil.parseNUM(sl.lowSort),
-            maxSort: ParseUtil.parseNUM(sl.maxSort),
-            enterNum: ParseUtil.parseNUM(sl.enterNum),
-            countOfZJZY: sl.countOfZJZY,
-            prvControlLines: sl.prvControlLines
-        })
-    }
-    // 有分数的大学再存储起来
-    if (scoreLines.length > 0) {
-        result.push({
-            cid: collegeData.cid,
-            cName: collegeData.cName,
-            uCode: collegeData.uCode,
-            provinceId: collegeData.provinceId,
-            scoreLines: scoreLines
-        })
+    if (collegeData.scoreLines !== undefined) {
+        for (let i = 0; i < collegeData.scoreLines.length; i++) {
+            sl = collegeData.scoreLines[i]
+            scoreLines.push({
+                year: sl.year,
+                course: sl.course,
+                batch: sl.batch,
+                batchName: sl.batchName,
+                uCode: sl.uCode,
+                chooseLevel: sl.chooseLevel,
+                lineDiff: sl.lineDiff,
+                minScore: ParseUtil.parseNUM(sl.minScore),
+                avgScore: ParseUtil.parseNUM(sl.avgScore),
+                maxScore: ParseUtil.parseNUM(sl.maxScore),
+                lowSort: ParseUtil.parseNUM(sl.lowSort),
+                maxSort: ParseUtil.parseNUM(sl.maxSort),
+                enterNum: ParseUtil.parseNUM(sl.enterNum),
+                countOfZJZY: sl.countOfZJZY,
+                prvControlLines: sl.prvControlLines
+            })
+        }
+        // 有分数的大学再存储起来
+        if (scoreLines.length > 0) {
+            result.push({
+                cid: collegeData.cid,
+                cName: collegeData.cName,
+                uCode: collegeData.uCode,
+                provinceId: collegeData.provinceId,
+                scoreLines: scoreLines
+            })
+        }
     }
 }
 
@@ -219,6 +221,7 @@ function parseDir() {
             }
             fs.writeFileSync(`${targetDir}/${provinceName}.json`, JSON.stringify(result))
         }
+        logger.info(provinces[id], 'completely')
     }
     logger.info('parse dir completely')
 }

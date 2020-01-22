@@ -25,9 +25,6 @@ async function query() {
     // 比如 yearFrom =2019, yearTo =2019 是获取2019年的信息
     const yearFrom = 2012
     const yearTo = 2018
-    // 1-文科，0-理科
-    const courseType = 1
-    const courseTypeStr = courseType === 1 ? '文科' : '理科'
 
     let provinceName, college, cid, cName
     let collegeProInfo = []
@@ -40,39 +37,42 @@ async function query() {
 
         for (let provinceId in provinces) {
             provinceName = provinces[provinceId]
+            // 1-文科，0-理科
+            for (let ct = 0; ct < 2; ct++) {
+                await ucode.query(provinceId, cid).then(async res => {
+                    const uCode = res
 
-            await ucode.query(provinceId, cid).then(async res => {
-                const uCode = res
+                    if (uCode !== 0 && uCode !== undefined) {
+                        await axios({
+                            url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Professions/Query?p=abc',
+                            method: 'POST',
+                            data: {
+                                data: common.youzyEpt({
+                                    uCode: uCode,
+                                    // batch: 0,
+                                    courseType: ct,
+                                    yearFrom: yearFrom,
+                                    yearTo: yearTo
+                                })
+                            }
+                        }).then(res => {
+                            if (res.data.result.length > 0) {
+                                collegeProInfo.push({
+                                    provinceId: provinceId,
+                                    proInfo: res.data.result
+                                })
+                            }
+                        }).catch(err => {
+                            logger.error(cName, provinceName, err);
+                        })
+                    }
+                })
 
-                if (uCode !== 0 && uCode !== undefined) {
-                    await axios({
-                        url: 'http://ia-pv4y.youzy.cn/Data/ScoreLines/Fractions/Professions/Query?p=abc',
-                        method: 'POST',
-                        data: {
-                            data: common.youzyEpt({
-                                uCode: uCode,
-                                // batch: 0,
-                                courseType: courseType,
-                                yearFrom: yearFrom,
-                                yearTo: yearTo
-                            })
-                        }
-                    }).then(res => {
-                        if (res.data.result.length > 0) {
-                            collegeProInfo.push({
-                                provinceId: provinceId,
-                                proInfo: res.data.result
-                            })
-                        }
-                    }).catch(err => {
-                        logger.error(cName, provinceName, err);
+                const courseTypeStr = ct === 1 ? '文科' : '理科'
+                logger.info(cName, courseTypeStr, provinceName, `剩 ${colleges.length - i - 1} 个大学`);
+                await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
 
-                    })
-                }
-            })
-
-            logger.info(cName, courseTypeStr, provinceName, `剩 ${colleges.length - i - 1} 个`);
-            await sleep.millisecond(Math.floor(Math.random() * 10) * 200)
+            }
         }
         if (collegeProInfo.length > 0) {
             fs.writeFileSync(`${resultDir}/${cid}.json`, JSON.stringify(collegeProInfo))
@@ -80,7 +80,7 @@ async function query() {
 
         logger.info(cName, 'completely');
     }
-logger.info('query completely');
+    logger.info('query completely');
 }
 
 /**
@@ -134,7 +134,7 @@ function parseDir() {
     let source
     let result = []
     fs.readdir(sourceDir, (err, files) => {
-        if(err){
+        if (err) {
             logger.error(err)
         }
         files.forEach(file => {
@@ -148,7 +148,7 @@ function parseDir() {
             logger.info(`parse ${file}`)
         })
     })
-logger.info('parse dir completely');
+    logger.info('parse dir completely');
 }
 
 // 1. 查数据
